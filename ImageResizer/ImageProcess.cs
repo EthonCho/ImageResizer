@@ -37,7 +37,7 @@ namespace ImageResizer
         /// <param name="sourcePath">圖片來源目錄路徑</param>
         /// <param name="destPath">產生圖片目的目錄路徑</param>
         /// <param name="scale">縮放比例</param>
-        public void ResizeImages(string sourcePath, string destPath, double scale)
+        public async Task ResizeImages(string sourcePath, string destPath, double scale)
         {
             List<Task> tasks = new List<Task>();
             var allFiles = FindImages(sourcePath);
@@ -53,29 +53,20 @@ namespace ImageResizer
 
                        int destionatonWidth = (int)(sourceWidth * scale);
                        int destionatonHeight = (int)(sourceHeight * scale);
-                       var thr = new Thread(() =>
-                       {
-                           Bitmap processedImage = processBitmaps((Bitmap)imgPhoto,
-                                                    sourceWidth, sourceHeight,
-                                                    destionatonWidth, destionatonHeight);
 
-                           string destFile = Path.Combine(destPath, imgName + ".jpg");
-                           processedImage.Save(destFile, ImageFormat.Jpeg);
+                       var processedImage = processBitmap((Bitmap)imgPhoto,
+                           sourceWidth, sourceHeight,
+                           destionatonWidth, destionatonHeight);
 
-                           //var processedImage = processBitmap((Bitmap)imgPhoto,
-                           //sourceWidth, sourceHeight,
-                           //destionatonWidth, destionatonHeight);
+                       string destFile = Path.Combine(destPath, imgName + ".jpg");
+                       processedImage.ContinueWith((t) => t.Result.Save(destFile, ImageFormat.Jpeg));
 
-                           //string destFile = Path.Combine(destPath, imgName + ".jpg");
-                           //processedImage.ContinueWith((t) => t.Result.Save(destFile, ImageFormat.Jpeg));
-                       });
-                       thr.Start();
                    });
 
                 tasks.Add(T);
             }
 
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
         }
 
 
